@@ -7,6 +7,7 @@ const menuSchema = new db.mongoose.Schema(
        name: {type: String, required: true},
        price: {type: Number, required: true},
        category: {type: String, required: true},
+       image: {type: String, required: false}, // URL hoặc đường dẫn hình ảnh
        status: {type: String, required: true, default: 'available'},
        createdAt: {type: Date, default: Date.now}
    },

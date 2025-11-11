@@ -43,11 +43,12 @@ exports.getMenuItemById = async (req, res) => {
 // Thêm menu item mới
 exports.createMenuItem = async (req, res) => {
     try {
-        const {name, price, category, status} = req.body;
+        const {name, price, category, image, status} = req.body;
         const newMenuItem = new menuModel({
             name,
             price,
             category,
+            image,
             status: status || 'available'
         });
         await newMenuItem.save();
@@ -68,10 +69,10 @@ exports.createMenuItem = async (req, res) => {
 // Sửa menu item theo ID
 exports.updateMenuItem = async (req, res) => {
     try {
-        const {name, price, category, status} = req.body;
+        const {name, price, category, image, status} = req.body;
         const updatedMenuItem = await menuModel.findByIdAndUpdate(
             req.params.id,
-            {name, price, category, status},
+            {name, price, category, image, status},
             {new: true, runValidators: true}
         );
         if (!updatedMenuItem) {

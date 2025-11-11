@@ -10,7 +10,13 @@ const orderSchema = new db.mongoose.Schema(
        items: [{
            menuItem: {type: db.mongoose.Schema.Types.ObjectId, ref: 'menuModel'},
            quantity: {type: Number},
-           price: {type: Number}
+           price: {type: Number},
+           status: {
+               type: String, 
+               enum: ['pending', 'preparing', 'ready', 'soldout'], 
+               default: 'pending'
+           }, // Trạng thái món: chờ, đang làm, sẵn sàng, hết món
+           note: {type: String} // Ghi chú đặc biệt cho món
        }],
        totalAmount: {type: Number, required: true},
        discount: {type: Number, default: 0},
