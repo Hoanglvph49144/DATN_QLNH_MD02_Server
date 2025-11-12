@@ -25,6 +25,8 @@ const orderSchema = new db.mongoose.Schema(
        change: {type: Number, default: 0},
        paymentMethod: {type: String, required: true},
        orderStatus: {type: String, required: true, default: 'pending'},
+       cancelReason: {type: String}, // Lý do hủy đơn
+       cancelledAt: {type: Date}, // Thời gian hủy
        mergedFrom: [{type: db.mongoose.Schema.Types.ObjectId, ref: 'orderModel'}],
        splitTo: [{type: db.mongoose.Schema.Types.ObjectId, ref: 'orderModel'}],
        createdAt: {type: Date, default: Date.now},
