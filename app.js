@@ -3,7 +3,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+require('dotenv').config();
 // Kết nối database
 require('./model/db');
 
@@ -41,7 +41,10 @@ app.use('/cashier', cashierRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  res.json(404).json({
+    success:false,
+    msg:"Không tìm thấy route"
+  })
 });
 
 // error handler
