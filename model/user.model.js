@@ -9,7 +9,7 @@ const userSchema = new db.mongoose.Schema(
        role: {type: String, required: true},
        name: {type: String, required: true},
        phoneNumber: {type: String, required: false},
-       email: {type: String, required: false},
+       email: {type: String, required: false, unique: true},
        isActive: {type: Boolean, default: true},
        createdAt: {type: Date, default: Date.now}
    },
