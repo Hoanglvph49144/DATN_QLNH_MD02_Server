@@ -1,8 +1,9 @@
-var express = require('express');
-var router = express.Router();
+// routes/orders.js
+const express = require('express');
+const router = express.Router();
 const orderController = require('../controllers/order.controller');
 
-// GET - Lấy danh sách tất cả orders
+// GET - Lấy danh sách tất cả orders (hỗ trợ ?tableNumber=)
 router.get('/', orderController.getAllOrders);
 
 // GET - Lấy chi tiết một order theo ID
