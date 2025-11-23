@@ -10,7 +10,10 @@ router.get('/:id', userController.getUserById);
 
 // POST - Tạo user mới (đăng ký)
 router.post('/', userController.createUser);
+
+// POST - Đăng nhập
 router.post('/login', userController.loginUser);
+
 // PUT - Cập nhật user theo ID
 router.put('/:id', userController.updateUser);
 

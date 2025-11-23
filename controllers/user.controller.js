@@ -18,7 +18,9 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Xem chi tiết một user theo ID
+/* ============================
+   LẤY USER THEO ID
+=============================== */
 exports.getUserById = async (req, res) => {
   try {
     const user = await userModel.findById(req.params.id).select("-password");
@@ -41,7 +43,9 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-// Tạo user mới (đăng ký)
+/* ============================
+   TẠO USER (CÓ HASH PASSWORD)
+=============================== */
 exports.createUser = async (req, res) => {
   try {
     const { username, password, role, name, phoneNumber, email, isActive } =
@@ -90,7 +94,9 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// Cập nhật user theo ID
+/* ============================
+   UPDATE USER (HASH PASSWORD)
+=============================== */
 exports.updateUser = async (req, res) => {
   try {
     const {username, name, phoneNumber, email, role, isActive, password } = req.body;
@@ -138,7 +144,9 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// Xóa user theo ID
+/* ============================
+   XÓA USER
+=============================== */
 exports.deleteUser = async (req, res) => {
   try {
     const deletedUser = await userModel
