@@ -206,7 +206,7 @@ exports.loginUser = async (req, res) => {
         const userResponse = user.toObject();
         delete userResponse.password;
 
-        res.status(200).json({
+        return res.status(200).json({
           success: true,
           message: "Đăng nhập thành công",
           token: token,

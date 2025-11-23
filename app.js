@@ -6,6 +6,7 @@ var logger = require('morgan');
 require('dotenv').config();
 // Kết nối database
 require('./model/db');
+var cors = require('cors');
 
 //////================// ROUTES ================//////
 var menuRouter = require('./routes/menu');
@@ -17,6 +18,7 @@ var kitchenRouter = require('./routes/kitchen');
 var cashierRouter = require('./routes/cashier');
 
 var app = express();
+app.use(cors()); // Thêm sau cookieParser
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

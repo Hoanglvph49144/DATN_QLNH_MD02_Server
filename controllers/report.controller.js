@@ -44,11 +44,29 @@ exports.getReportById = async (req, res) => {
 // Tạo báo cáo theo ngày
 exports.createDailyReport = async (req, res) => {
     try {
-        const {date} = req.body;
-        const startDate = new Date(date);
+        const {date, reportDate} = req.body; // Nhận cả 2
+        const dateString = date || reportDate; // Ưu tiên date
+        
+        if (!dateString) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu tham số date hoặc reportDate'
+            });
+        }
+
+        const startDate = new Date(dateString);
         startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(date);
+        
+        const endDate = new Date(dateString);
         endDate.setHours(23, 59, 59, 999);
+
+        // Kiểm tra ngày hợp lệ
+        if (isNaN(startDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: 'Định dạng ngày không hợp lệ'
+            });
+        }
 
         // Lấy tất cả orders trong ngày
         const orders = await orderModel.find({
