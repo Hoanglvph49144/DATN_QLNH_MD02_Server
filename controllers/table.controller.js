@@ -3,7 +3,7 @@ const {tableModel} = require('../model/table.model');
 // Lấy danh sách tất cả các bàn
 exports.getAllTables = async (req, res) => {
     try {
-        const tables = await tableModel.find().populate('currentOrder');
+        const tables = await tableModel.find();
         res.status(200).json({
             success: true,
             data: tables
@@ -20,7 +20,7 @@ exports.getAllTables = async (req, res) => {
 // Lấy chi tiết một bàn theo ID
 exports.getTableById = async (req, res) => {
     try {
-        const table = await tableModel.findById(req.params.id).populate('currentOrder');
+        const table = await tableModel.findById(req.params.id);
         if (!table) {
             return res.status(404).json({
                 success: false,
@@ -44,7 +44,7 @@ exports.getTableById = async (req, res) => {
 exports.getTablesByStatus = async (req, res) => {
     try {
         const {status} = req.params;
-        const tables = await tableModel.find({status}).populate('currentOrder');
+        const tables = await tableModel.find({status});
         res.status(200).json({
             success: true,
             data: tables
