@@ -115,27 +115,28 @@ exports.updateTable = async (req, res) => {
 // Cập nhật trạng thái bàn
 exports.updateTableStatus = async (req, res) => {
     try {
-        const {status} = req.body;
-        const updatedTable = await tableModel.findByIdAndUpdate(
+        const { status } = req.body;
+
+        const updatedTable = await Table.findByIdAndUpdate(
             req.params.id,
-            {status, updatedAt: Date.now()},
-            {new: true, runValidators: true}
+            { status, currentOrder: null, updatedAt: Date.now() },
+            { new: true }
         );
         if (!updatedTable) {
             return res.status(404).json({
                 success: false,
-                message: 'Không tìm thấy bàn'
+                message: "Không tìm thấy bàn"
             });
         }
         res.status(200).json({
             success: true,
-            message: 'Cập nhật trạng thái bàn thành công',
+            message: "Cập nhật trạng thái bàn thành công",
             data: updatedTable
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Lỗi khi cập nhật trạng thái bàn',
+            message: "Lỗi khi cập nhật trạng thái bàn",
             error: error.message
         });
     }
