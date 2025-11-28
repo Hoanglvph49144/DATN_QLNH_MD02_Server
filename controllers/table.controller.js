@@ -2,19 +2,19 @@ const { tableModel } = require("../model/table.model");
 
 // Lấy danh sách tất cả các bàn
 exports.getAllTables = async (req, res) => {
-  try {
-    const tables = await tableModel.find().populate("currentOrder");
-    return res.status(200).json({
-      success: true,
-      data: tables,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi lấy danh sách bàn",
-      error: error.message,
-    });
-  }
+    try {
+        const tables = await tableModel.find();
+        res.status(200).json({
+            success: true,
+            data: tables
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách bàn',
+            error: error.message
+        });
+    }
 };
 
 // Lấy chi tiết một bàn theo ID

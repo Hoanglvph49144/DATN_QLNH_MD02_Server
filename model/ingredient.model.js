@@ -1,4 +1,4 @@
-// model/ingredient.model.js
+
 const db = require('./db');
 
 const ingredientSchema = new db.mongoose.Schema(

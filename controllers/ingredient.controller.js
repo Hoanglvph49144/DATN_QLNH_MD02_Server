@@ -1,160 +1,307 @@
+// controllers/ingredient.controller.js
 const { ingredientModel } = require('../model/ingredient.model');
 
-// 1. Xem danh sách tất cả nguyên liệu (Kho)
+// Lấy tất cả nguyên liệu
 exports.getAllIngredients = async (req, res) => {
-    try {
-        // Có thể sort theo createdAt để thấy cái mới nhất, hoặc theo quantity để thấy cái sắp hết
-        const ingredients = await ingredientModel.find().sort({ createdAt: -1 });
-        
-        res.status(200).json({
-            success: true,
-            count: ingredients.length,
-            data: ingredients
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy danh sách nguyên liệu',
-            error: error.message
-        });
-    }
+  try {
+    const { status, tag } = req.query;
+    const filter = {};
+    
+    if (status) filter.status = status;
+    if (tag) filter.tag = tag;
+
+    const ingredients = await ingredientModel
+      .find(filter)
+      .sort({ name: 1 })
+      .lean()
+      .exec();
+
+    return res.status(200).json({ 
+      success: true, 
+      data: ingredients,
+      count: ingredients.length 
+    });
+  } catch (error) {
+    console.error('getAllIngredients error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách nguyên liệu',
+      error: error.message
+    });
+  }
 };
 
-// 2. Xem chi tiết một nguyên liệu theo ID
+// Lấy chi tiết một nguyên liệu
 exports.getIngredientById = async (req, res) => {
-    try {
-        const ingredient = await ingredientModel.findById(req.params.id);
-        
-        if (!ingredient) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy nguyên liệu'
-            });
-        }
-        
-        res.status(200).json({
-            success: true,
-            data: ingredient
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi lấy chi tiết nguyên liệu',
-            error: error.message
-        });
+  try {
+    const ingredient = await ingredientModel.findById(req.params.id).lean().exec();
+
+    if (!ingredient) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy nguyên liệu' 
+      });
     }
+
+    return res.status(200).json({ 
+      success: true, 
+      data: ingredient 
+    });
+  } catch (error) {
+    console.error('getIngredientById error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy chi tiết nguyên liệu',
+      error: error.message
+    });
+  }
 };
 
-// 3. Thêm nguyên liệu mới vào kho
+// Tạo nguyên liệu mới (Admin)
 exports.createIngredient = async (req, res) => {
-    try {
-        const { name, unit, quantity, minThreshold, importPrice, supplier } = req.body;
-        
-        // Kiểm tra xem nguyên liệu đã tồn tại chưa (tuỳ chọn)
-        const existingIngredient = await ingredientModel.findOne({ name });
-        if (existingIngredient) {
-            return res.status(400).json({
-                success: false,
-                message: 'Nguyên liệu này đã tồn tại trong kho'
-            });
-        }
+  try {
+    const { name, tag, unit, quantity, minQuantity, image, description, supplier } = req.body;
 
-        const newIngredient = new ingredientModel({
-            name,
-            unit,
-            quantity: quantity || 0,
-            minThreshold: minThreshold || 5, // Mặc định cảnh báo khi dưới 5
-            importPrice: importPrice || 0,
-            supplier
-            // status sẽ tự động được tính toán trong model pre-save middleware
-        });
+    const newIngredient = new ingredientModel({
+      name,
+      tag,
+      unit,
+      quantity: quantity || 0,
+      minQuantity: minQuantity || 5,
+      image,
+      description,
+      supplier,
+      lastRestocked: quantity > 0 ? Date.now() : null
+    });
 
-        await newIngredient.save();
+    const saved = await newIngredient.save();
 
-        res.status(201).json({
-            success: true,
-            message: 'Thêm nguyên liệu thành công',
-            data: newIngredient
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi thêm nguyên liệu',
-            error: error.message
-        });
-    }
+    return res.status(201).json({
+      success: true,
+      message: 'Tạo nguyên liệu thành công',
+      data: saved
+    });
+  } catch (error) {
+    console.error('createIngredient error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tạo nguyên liệu',
+      error: error.message
+    });
+  }
 };
 
-// 4. Sửa nguyên liệu (Cập nhật số lượng, giá nhập, thông tin...)
+// Bếp lấy nguyên liệu (trừ số lượng)
+exports.takeIngredient = async (req, res) => {
+  try {
+    const { amount } = req.body; // Số lượng cần lấy
+    const ingredientId = req.params.id;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số lượng lấy phải lớn hơn 0'
+      });
+    }
+
+    const ingredient = await ingredientModel.findById(ingredientId);
+
+    if (!ingredient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy nguyên liệu'
+      });
+    }
+
+    // Kiểm tra số lượng còn đủ không
+    if (ingredient.quantity < amount) {
+      return res.status(400).json({
+        success: false,
+        message: `Không đủ nguyên liệu. Chỉ còn ${ingredient.quantity} ${ingredient.unit}`,
+        data: { 
+          available: ingredient.quantity,
+          requested: amount,
+          unit: ingredient.unit
+        }
+      });
+    }
+
+    // Trừ số lượng
+    ingredient.quantity -= amount;
+    
+    // Middleware sẽ tự động cập nhật status
+    await ingredient.save();
+
+    // Kiểm tra nếu hết hàng hoặc sắp hết
+    let notification = null;
+    if (ingredient.status === 'out_of_stock') {
+      notification = {
+        type: 'OUT_OF_STOCK',
+        message: `⚠️ CẢNH BÁO: Nguyên liệu "${ingredient.name}" đã HẾT!`,
+        ingredientId: ingredient._id,
+        ingredientName: ingredient.name
+      };
+    } else if (ingredient.status === 'low_stock') {
+      notification = {
+        type: 'LOW_STOCK',
+        message: `⚠️ CẢNH BÁO: Nguyên liệu "${ingredient.name}" sắp hết. Còn ${ingredient.quantity} ${ingredient.unit}`,
+        ingredientId: ingredient._id,
+        ingredientName: ingredient.name,
+        quantity: ingredient.quantity
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Đã lấy ${amount} ${ingredient.unit} ${ingredient.name}`,
+      data: ingredient,
+      notification
+    });
+  } catch (error) {
+    console.error('takeIngredient error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy nguyên liệu',
+      error: error.message
+    });
+  }
+};
+
+// Nhập thêm nguyên liệu (Admin)
+exports.restockIngredient = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const ingredientId = req.params.id;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số lượng nhập phải lớn hơn 0'
+      });
+    }
+
+    const ingredient = await ingredientModel.findById(ingredientId);
+
+    if (!ingredient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy nguyên liệu'
+      });
+    }
+
+    // Cộng số lượng
+    ingredient.quantity += amount;
+    ingredient.lastRestocked = Date.now();
+    
+    await ingredient.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Đã nhập thêm ${amount} ${ingredient.unit} ${ingredient.name}`,
+      data: ingredient
+    });
+  } catch (error) {
+    console.error('restockIngredient error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi nhập nguyên liệu',
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật thông tin nguyên liệu (Admin)
 exports.updateIngredient = async (req, res) => {
-    try {
-        const { name, unit, quantity, minThreshold, importPrice, supplier } = req.body;
-        
-        // Logic cập nhật status dựa trên quantity mới (nếu bạn không dùng middleware pre-save)
-        let status = 'available';
-        if (quantity !== undefined) {
-             if (quantity <= 0) status = 'out_of_stock';
-             else if (minThreshold && quantity <= minThreshold) status = 'low_stock';
-             else if (!minThreshold && quantity <= 5) status = 'low_stock'; // fallback nếu không gửi minThreshold
-        }
+  try {
+    const { name, tag, unit, quantity, minQuantity, image, description, supplier } = req.body;
 
-        const updatedIngredient = await ingredientModel.findByIdAndUpdate(
-            req.params.id,
-            { 
-                name, 
-                unit, 
-                quantity, 
-                minThreshold, 
-                importPrice, 
-                supplier,
-                status // Cập nhật lại status luôn cho đồng bộ
-            },
-            { new: true, runValidators: true }
-        );
+    const updated = await ingredientModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        tag,
+        unit,
+        quantity,
+        minQuantity,
+        image,
+        description,
+        supplier,
+        updatedAt: Date.now()
+      },
+      { new: true, runValidators: true }
+    ).exec();
 
-        if (!updatedIngredient) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy nguyên liệu'
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Cập nhật nguyên liệu thành công',
-            data: updatedIngredient
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi cập nhật nguyên liệu',
-            error: error.message
-        });
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy nguyên liệu'
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật nguyên liệu thành công',
+      data: updated
+    });
+  } catch (error) {
+    console.error('updateIngredient error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi cập nhật nguyên liệu',
+      error: error.message
+    });
+  }
 };
 
-// 5. Xóa nguyên liệu
+// Xóa nguyên liệu (Admin)
 exports.deleteIngredient = async (req, res) => {
-    try {
-        const deletedIngredient = await ingredientModel.findByIdAndDelete(req.params.id);
-        
-        if (!deletedIngredient) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy nguyên liệu'
-            });
-        }
+  try {
+    const deleted = await ingredientModel.findByIdAndDelete(req.params.id).exec();
 
-        res.status(200).json({
-            success: true,
-            message: 'Xóa nguyên liệu thành công',
-            data: deletedIngredient
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Lỗi khi xóa nguyên liệu',
-            error: error.message
-        });
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy nguyên liệu'
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa nguyên liệu thành công',
+      data: deleted
+    });
+  } catch (error) {
+    console.error('deleteIngredient error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa nguyên liệu',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách nguyên liệu cảnh báo (hết hoặc sắp hết)
+exports.getWarningIngredients = async (req, res) => {
+  try {
+    const warnings = await ingredientModel
+      .find({ 
+        status: { $in: ['low_stock', 'out_of_stock'] } 
+      })
+      .sort({ quantity: 1, name: 1 })
+      .lean()
+      .exec();
+
+    return res.status(200).json({
+      success: true,
+      data: warnings,
+      count: warnings.length
+    });
+  } catch (error) {
+    console.error('getWarningIngredients error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách cảnh báo',
+      error: error.message
+    });
+  }
 };
