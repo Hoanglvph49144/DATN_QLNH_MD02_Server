@@ -18,6 +18,10 @@ var tablesRouter = require('./routes/tables');
 var kitchenRouter = require('./routes/kitchen');
 var cashierRouter = require('./routes/cashier');
 var ingredientsRouter = require('./routes/ingredients');
+var attendanceRouter = require('./routes/attendance');
+var shiftsRouter = require('./routes/shifts');
+var shiftAssignmentsRouter = require('./routes/shiftAssignments');
+var payrollRouter = require('./routes/payroll');
 
 
 
@@ -44,7 +48,11 @@ app.use('/reports', reportsRouter);
 app.use('/tables', tablesRouter);
 app.use('/kitchen', kitchenRouter);
 app.use('/cashier', cashierRouter);
-app.use('/ingredients', ingredientsRouter); 
+app.use('/ingredients', ingredientsRouter);
+app.use('/attendance', attendanceRouter);
+app.use('/shifts', shiftsRouter);
+app.use('/shift-assignments', shiftAssignmentsRouter);
+app.use('/payroll', payrollRouter); 
 
 
 // catch 404 and forward to error handler
