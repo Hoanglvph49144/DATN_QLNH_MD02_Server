@@ -193,24 +193,20 @@ exports.deleteReport = async (req, res) => {
 // Lấy báo cáo theo khoảng ngày
 exports.getReportsByDate = async (req, res) => {
     try {
-        const { fromDate, toDate } = req.query;
-
-        if (!fromDate || !toDate) {
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate) {
             return res.status(400).json({ 
                 success: false, 
-                message: "Cần cung cấp fromDate và toDate" 
+                message: "Cần cung cấp startDate và endDate" 
             });
         }
-
-        const start = new Date(fromDate);
+        const start = new Date(startDate);
         start.setHours(0, 0, 0, 0); // bắt đầu ngày
-        const end = new Date(toDate);
+        const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // kết thúc ngày
-
         const reports = await reportModel.find({
             date: { $gte: start, $lte: end }
-        }).sort({ date: 1 }); // sắp xếp tăng dần theo ngày
-
+        }).sort({ date: 1 });
         return res.status(200).json({
             success: true,
             data: reports
@@ -225,3 +221,4 @@ exports.getReportsByDate = async (req, res) => {
         });
     }
 };
+
