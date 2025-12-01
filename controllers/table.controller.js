@@ -182,8 +182,6 @@ exports.updateTableStatus = async (req, res) => {
 };
 
 
-  
-
 // Xóa bàn
 exports.deleteTable = async (req, res) => {
   try {
@@ -269,4 +267,70 @@ exports.reserveTable = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: 'Lỗi khi đặt trước bàn', error: error.message });
     }
-}
+};
+
+// Lấy danh sách bàn theo trạng thái
+exports.getTablesByStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const tables = await tableModel.find({ status });
+        res.status(200).json({
+            success: true,
+            data: tables
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách bàn theo trạng thái',
+            error: error.message
+        });
+    }
+};
+
+// Lấy chi tiết một bàn theo ID
+exports.getTableById = async (req, res) => {
+    try {
+        const table = await tableModel.findById(req.params.id);
+        if (!table) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy bàn'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: table
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy chi tiết bàn',
+            error: error.message
+        });
+    }
+};
+
+// Thêm bàn mới
+exports.createTable = async (req, res) => {
+    try {
+        const { tableNumber, capacity, location, status } = req.body;
+        const newTable = new tableModel({
+            tableNumber,
+            capacity,
+            location,
+            status: status || 'available'
+        });
+        await newTable.save();
+        res.status(201).json({
+            success: true,
+            message: 'Thêm bàn thành công',
+            data: newTable
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi thêm bàn',
+            error: error.message
+        });
+    }
+};
