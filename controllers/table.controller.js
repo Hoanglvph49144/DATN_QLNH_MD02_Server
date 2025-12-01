@@ -13,157 +13,113 @@ function emitIo(req, eventName, payload) {
 // Lấy danh sách tất cả các bàn
 exports.getAllTables = async (req, res) => {
     try {
-        exports.updateTable = async (req, res) => {
-          try {
-            const {tableNumber, capacity, location, status, currentOrder, reservationName, reservationPhone, reservationAt} = req.body;
-            const updatedTable = await tableModel.findByIdAndUpdate(
-              req.params.id,
-              {tableNumber, capacity, location, status, currentOrder, reservationName, reservationPhone, reservationAt, updatedAt: new Date()},
-              {new: true, runValidators: true}
-            );
-            if (!updatedTable) {
-              return res.status(404).json({
+        const tables = await tableModel.find();
+        res.status(200).json({
+            success: true,
+            data: tables
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách bàn',
+            error: error.message
+        });
+    }
+};
+
+// Cập nhật thông tin bàn
+exports.updateTable = async (req, res) => {
+    try {
+        const {tableNumber, capacity, location, status, currentOrder, reservationName, reservationPhone, reservationAt} = req.body;
+        const updatedTable = await tableModel.findByIdAndUpdate(
+            req.params.id,
+            {tableNumber, capacity, location, status, currentOrder, reservationName, reservationPhone, reservationAt, updatedAt: new Date()},
+            {new: true, runValidators: true}
+        );
+        if (!updatedTable) {
+            return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy bàn'
-              });
-            }
-
-            // Emit status changed event
-            emitIo(req, 'table_status_changed', {
-              tableId: updatedTable._id,
-              tableNumber: updatedTable.tableNumber,
-              status: updatedTable.status,
-              updatedAt: updatedTable.updatedAt
             });
+        }
 
-            // If updated to reserved, schedule auto-release after 20s
-            if (updatedTable.status === 'reserved') {
-              emitIo(req, 'table_reserved', {
+        // Emit status changed event
+        emitIo(req, 'table_status_changed', {
+            tableId: updatedTable._id,
+            tableNumber: updatedTable.tableNumber,
+            status: updatedTable.status,
+            updatedAt: updatedTable.updatedAt
+        });
+
+        // If updated to reserved, schedule auto-release after 20s
+        if (updatedTable.status === 'reserved') {
+            emitIo(req, 'table_reserved', {
                 tableId: updatedTable._id,
                 tableNumber: updatedTable.tableNumber,
                 status: 'reserved',
                 updatedAt: updatedTable.updatedAt
-              });
+            });
 
-              const id = req.params.id;
-              setTimeout(async () => {
+            const id = req.params.id;
+            setTimeout(async () => {
                 try {
-                  const latest = await tableModel.findById(id);
-                  if (latest && latest.status === 'reserved') {
-                    latest.status = 'available';
-                    latest.updatedAt = new Date();
-                    // clear reservation fields if exist
-                    if (latest.reservationName) latest.reservationName = '';
-                    if (latest.reservationPhone) latest.reservationPhone = '';
-                    if (latest.reservationAt) latest.reservationAt = '';
-                    await latest.save();
-
-                    // Emit both auto-released and status changed
-                    emitIo(req, 'table_auto_released', {
-                      tableId: latest._id,
-                      tableNumber: latest.tableNumber,
-                      status: 'available',
-                      updatedAt: latest.updatedAt
-                    });
-                    emitIo(req, 'table_status_changed', {
-                      tableId: latest._id,
-                      tableNumber: latest.tableNumber,
-                      status: 'available',
-                      updatedAt: latest.updatedAt
-                    });
-                  }
-                } catch (e) { /* ignore */ }
-              }, 20000);
-            }
-
-            res.status(200).json({
-              success: true,
-              message: 'Cập nhật bàn thành công',
-              data: updatedTable
-            });
-          } catch (error) {
-            res.status(500).json({
-              success: false,
-              message: 'Lỗi khi cập nhật bàn',
-              error: error.message
-            });
-          }
-        };
-            tableNumber: updatedTable.tableNumber,
-            exports.updateTableStatus = async (req, res) => {
-              try {
-                const {status} = req.body;
-                const updatedTable = await tableModel.findByIdAndUpdate(
-                  req.params.id,
-                  {status, updatedAt: new Date()},
-                  {new: true, runValidators: true}
-                );
-                if (!updatedTable) {
-                  return res.status(404).json({
-                    success: false,
-                    message: 'Không tìm thấy bàn'
-                  });
-                }
-
-                // Emit status changed
-                emitIo(req, 'table_status_changed', {
-                  tableId: updatedTable._id,
-                  tableNumber: updatedTable.tableNumber,
-                  status: updatedTable.status,
-                  updatedAt: updatedTable.updatedAt
-                });
-
-                // If set to reserved via this endpoint, schedule auto-release
-                if (updatedTable.status === 'reserved') {
-                  emitIo(req, 'table_reserved', {
-                    tableId: updatedTable._id,
-                    tableNumber: updatedTable.tableNumber,
-                    status: 'reserved',
-                    updatedAt: updatedTable.updatedAt
-                  });
-
-                  const id = req.params.id;
-                  setTimeout(async () => {
-                    try {
-                      const latest = await tableModel.findById(id);
-                      if (latest && latest.status === 'reserved') {
+                    const latest = await tableModel.findById(id);
+                    if (latest && latest.status === 'reserved') {
                         latest.status = 'available';
                         latest.updatedAt = new Date();
+                        // clear reservation fields if exist
                         if (latest.reservationName) latest.reservationName = '';
                         if (latest.reservationPhone) latest.reservationPhone = '';
                         if (latest.reservationAt) latest.reservationAt = '';
                         await latest.save();
 
+                        // Emit both auto-released and status changed
                         emitIo(req, 'table_auto_released', {
-                          tableId: latest._id,
-                          tableNumber: latest.tableNumber,
-                          status: 'available',
-                          updatedAt: latest.updatedAt
+                            tableId: latest._id,
+                            tableNumber: latest.tableNumber,
+                            status: 'available',
+                            updatedAt: latest.updatedAt
                         });
                         emitIo(req, 'table_status_changed', {
-                          tableId: latest._id,
-                          tableNumber: latest.tableNumber,
-                          status: 'available',
-                          updatedAt: latest.updatedAt
+                            tableId: latest._id,
+                            tableNumber: latest.tableNumber,
+                            status: 'available',
+                            updatedAt: latest.updatedAt
                         });
-                      }
-                    } catch (e) { /* ignore */ }
-                  }, 20000);
-                }
+                    }
+                } catch (e) { /* ignore */ }
+            }, 20000);
+        }
 
-                res.status(200).json({
-                  success: true,
-                  message: 'Cập nhật trạng thái bàn thành công',
-                  data: updatedTable
-                });
-              } catch (error) {
-                res.status(500).json({
-                  success: false,
-                  message: 'Lỗi khi cập nhật trạng thái bàn',
-                  error: error.message
-                });
-              }
-            };
+        res.status(200).json({
+            success: true,
+            message: 'Cập nhật bàn thành công',
+            data: updatedTable
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi cập nhật bàn',
+            error: error.message
+        });
+    }
+};
+
+// Cập nhật trạng thái bàn
+exports.updateTableStatus = async (req, res) => {
+    try {
+        const {status} = req.body;
+        const updatedTable = await tableModel.findByIdAndUpdate(
+            req.params.id,
+            {status, updatedAt: new Date()},
+            {new: true, runValidators: true}
+        );
+        if (!updatedTable) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy bàn'
+            });
+        }
 
         // Emit status changed
         emitIo(req, 'table_status_changed', {
@@ -222,34 +178,11 @@ exports.getAllTables = async (req, res) => {
             message: 'Lỗi khi cập nhật trạng thái bàn',
             error: error.message
         });
-=======
-  try {
-    const { status } = req.body;
-    const updatedTable = await tableModel.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedAt: Date.now() },
-      { new: true, runValidators: true }
-    );
-    if (!updatedTable) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy bàn",
-      });
->>>>>>> 4cf1959092632681952335885d6eb6f8bb886346
     }
-    res.status(200).json({
-      success: true,
-      message: "Cập nhật trạng thái bàn thành công",
-      data: updatedTable,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi cập nhật trạng thái bàn",
-      error: error.message,
-    });
-  }
 };
+
+
+  
 
 // Xóa bàn
 exports.deleteTable = async (req, res) => {
@@ -336,4 +269,4 @@ exports.reserveTable = async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, message: 'Lỗi khi đặt trước bàn', error: error.message });
     }
-};
+}
