@@ -48,12 +48,12 @@ const ingredientSchema = new db.mongoose.Schema(
     }, // Lần nhập kho gần nhất
     createdAt: { 
       type: Date, 
-      default: Date.now 
+      default: () => new Date() 
     },
     updatedAt: { 
       type: Date, 
-      default: Date.now 
-    }
+      default: () => new Date() 
+    },
   },
   {
     collection: 'ingredients'
@@ -69,7 +69,7 @@ ingredientSchema.pre('save', function(next) {
   } else {
     this.status = 'available';
   }
-  this.updatedAt = Date.now();
+  this.updatedAt = new Date();
   next();
 });
 

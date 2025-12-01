@@ -71,7 +71,7 @@ exports.createIngredient = async (req, res) => {
       image,
       description,
       supplier,
-      lastRestocked: quantity > 0 ? Date.now() : null
+      lastRestocked: quantity > 0 ? new Date() : null
     });
 
     const saved = await newIngredient.save();
@@ -191,7 +191,7 @@ exports.restockIngredient = async (req, res) => {
 
     // Cộng số lượng
     ingredient.quantity += amount;
-    ingredient.lastRestocked = Date.now();
+    ingredient.lastRestocked = new Date();
     
     await ingredient.save();
 
@@ -226,7 +226,7 @@ exports.updateIngredient = async (req, res) => {
         image,
         description,
         supplier,
-        updatedAt: Date.now()
+        updatedAt: new Date()
       },
       { new: true, runValidators: true }
     ).exec();
