@@ -405,14 +405,33 @@ exports.payOrder = async (req, res) => {
     await orderModel.findByIdAndDelete(orderId);
 
     // --- Reset bàn ---
-    let tableReset = null;
-    if (order.tableNumber !== undefined && order.tableNumber !== null) {
-      tableReset = await tableModel.findOneAndUpdate(
-        { tableNumber: order.tableNumber },
-        { status: 'available', currentOrder: null, updatedAt: Date.now() },
-        { new: true }
-      );
-    }
+   let tableReset = null;
+
+if (order.tableNumber !== undefined && order.tableNumber !== null) {
+  // Đếm xem bàn này còn bao nhiêu hóa đơn khác chưa thanh toán
+  const countOrders = await orderModel.countDocuments({
+    tableNumber: order.tableNumber,
+    _id: { $ne: order._id },        // loại trừ hóa đơn hiện tại
+    status: { $ne: "paid" }         // chỉ đếm hóa đơn chưa thanh toán
+  });
+
+  if (countOrders === 0) {
+    // Không còn hóa đơn nào khác → reset bàn
+    tableReset = await tableModel.findOneAndUpdate(
+      { tableNumber: order.tableNumber },
+      {
+        status: "available",
+        currentOrder: null,
+        updatedAt: Date.now(),
+      },
+      { new: true }
+    );
+  } else {
+    // Vẫn còn hóa đơn khác → giữ nguyên trạng thái
+    console.log(`Bàn ${order.tableNumber} vẫn còn ${countOrders} hóa đơn khác → không reset.`);
+  }
+}
+
 
     // --- Cập nhật báo cáo ngày ---
     const today = new Date();
@@ -624,7 +643,7 @@ exports.requestTempCalculation = async (req, res) => {
     // Cập nhật trạng thái sang temp_calculation
     order.orderStatus = 'temp_calculation';
     order.tempCalculationRequestedBy = requestedBy || null;
-    order.tempCalculationRequestedAt = new Date();
+    order.tempCalculationRequestedAt = new Date(); // Đã đúng thời gian thực
     await order.save();
 
     // Populate để lấy đầy đủ thông tin
