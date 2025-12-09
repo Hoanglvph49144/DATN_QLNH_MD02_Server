@@ -44,14 +44,6 @@ const shiftSchema = new db.mongoose.Schema(
 );
 
 shiftSchema.pre('save', function (next) {
-<<<<<<< HEAD
-  this.updatedAt = Date.now();
-  next();
-});
-
-const shiftModel = db.mongoose.model('shiftModel', shiftSchema);
-
-=======
     this.updatedAt = Date.now();
     next();
 });
