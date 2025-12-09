@@ -1,9 +1,6 @@
 const db = require('./db');
 
-<<<<<<< HEAD
-=======
 
->>>>>>> b1f4bb72a99005d6a9e4b332aea9d9549a020e26
 // Định nghĩa schema cho shift (ca làm việc)
 const shiftSchema = new db.mongoose.Schema(
   {
@@ -50,5 +47,4 @@ shiftSchema.pre('save', function (next) {
 
 
 const shiftModel = db.mongoose.model('shiftModel', shiftSchema);
->>>>>>> b1f4bb72a99005d6a9e4b332aea9d9549a020e26
 module.exports = { shiftModel };
