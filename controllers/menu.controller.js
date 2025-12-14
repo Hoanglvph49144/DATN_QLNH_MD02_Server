@@ -1,4 +1,4 @@
-const {menuModel} = require('../model/menu.model');
+const { menuModel } = require('../model/menu.model');
 
 // Xem danh sách tất cả menu items
 exports.getAllMenuItems = async (req, res) => {
@@ -43,7 +43,18 @@ exports.getMenuItemById = async (req, res) => {
 // Thêm menu item mới
 exports.createMenuItem = async (req, res) => {
     try {
-        const {name, price, category, image, status} = req.body;
+        const { name, price, category, image, status } = req.body;
+        // Kiểm tra trùng tên menu item ko phân biệt hoa thường
+        const existingItem = await menuModel.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
+        if (existingItem) {
+            return res.status(400).json({
+                success: false,
+                message: 'Menu item với tên này đã tồn tại'
+            });
+        }
+        
+       
+
         const newMenuItem = new menuModel({
             name,
             price,
@@ -69,11 +80,11 @@ exports.createMenuItem = async (req, res) => {
 // Sửa menu item theo ID
 exports.updateMenuItem = async (req, res) => {
     try {
-        const {name, price, category, image, status} = req.body;
+        const { name, price, category, image, status } = req.body;
         const updatedMenuItem = await menuModel.findByIdAndUpdate(
             req.params.id,
-            {name, price, category, image, status},
-            {new: true, runValidators: true}
+            { name, price, category, image, status },
+            { new: true, runValidators: true }
         );
         if (!updatedMenuItem) {
             return res.status(404).json({

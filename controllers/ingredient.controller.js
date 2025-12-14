@@ -73,7 +73,14 @@ exports.createIngredient = async (req, res) => {
       importPrice,
       category
     } = req.body;
-
+    // Kiểm tra trùng tên nguyên liệu ko phân biệt hoa thường
+    const existingItem = await ingredientModel.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
+    if (existingItem) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nguyên liệu với tên này đã tồn tại'
+      });
+    }
         const newIngredient = new ingredientModel({
       name,
       tag,
@@ -257,6 +264,17 @@ exports.updateIngredient = async (req, res) => {
       importPrice,
       category
     } = req.body;
+    // Kiểm tra trùng tên nguyên liệu ko phân biệt hoa thường , trừ chính nó
+    const existingItem = await ingredientModel.findOne({ 
+      name: { $regex: new RegExp('^' + name + '$', 'i') },
+      _id: { $ne: req.params.id }
+    });
+    if (existingItem) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nguyên liệu với tên này đã tồn tại'
+      });
+    }
 
     const updated = await ingredientModel.findByIdAndUpdate(
       req.params.id,
