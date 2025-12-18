@@ -13,7 +13,10 @@ router.get('/byDate', orderController.getRevenueByDate);
 // Lịch sử đơn đã thanh toán
 router.get('/historyod', orderController.getPaidOrders);
 
-router.post('/pay', orderController.payOrder);
+router.post('/pay', async (req, res) => {
+  const result = await orderController.payOrder(req);
+  res.json(result);
+});
 
 // GET - Lấy danh sách tất cả orders (hỗ trợ ?tableNumber=)
 router.get('/', orderController.getAllOrders);
