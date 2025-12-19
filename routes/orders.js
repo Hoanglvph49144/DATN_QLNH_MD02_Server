@@ -2,18 +2,29 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/order.controller');
-
 const kitchenController = require('../controllers/kitchen.controller');
 
+// ========================================
+// SPECIAL ROUTES (phải đặt TRƯỚC các routes có : id)
+// ========================================
+
+// Revenue routes
 router.get('/revenue', orderController.getRevenueFromOrders);
-
-// Thống kê doanh thu theo ngày (theo query ?fromDate&toDate)
 router.get('/byDate', orderController.getRevenueByDate);
-
-// Lịch sử đơn đã thanh toán
 router.get('/historyod', orderController.getPaidOrders);
 
+// Payment route
 router.post('/pay', orderController.payOrder);
+
+// ✨ MỚI:  Di chuyển TẤT CẢ orders sang bàn khác (không tách hóa đơn)
+router.post('/move-to-table', orderController.moveOrdersToTable);
+
+// CŨ:  Tách bàn (giữ lại cho tương thích)
+router.post('/split-table', orderController.splitTable);
+
+// ========================================
+// CRUD ROUTES
+// ========================================
 
 // GET - Lấy danh sách tất cả orders (hỗ trợ ?tableNumber=)
 router.get('/', orderController.getAllOrders);
@@ -30,13 +41,17 @@ router.put('/:id', orderController.updateOrder);
 // DELETE - Xóa order theo ID
 router.delete('/:id', orderController.deleteOrder);
 
-// POST - Yêu cầu tạm tính: chuyển order sang trạng thái "hóa đơn tạm tính" và gửi thông báo cho thu ngân
+// ========================================
+// ITEM-SPECIFIC ROUTES (phải có :id trong path)
+// ========================================
+
+// POST - Yêu cầu tạm tính
 router.post('/:id/request-temp-calculation', orderController.requestTempCalculation);
 
-// PATCH cập nhật trạng thái món (đã có)
+// PATCH - Cập nhật trạng thái món
 router.patch('/:orderId/items/:itemId/status', kitchenController.updateItemStatus);
 
-// NEW: route để phục vụ yêu cầu hủy món (phục vụ gửi yêu cầu lên bếp kèm lý do)
+// POST - Yêu cầu hủy món (phục vụ gửi yêu cầu lên bếp kèm lý do)
 router.post('/:orderId/items/:itemId/request-cancel', kitchenController.requestCancelDish);
 
 module.exports = router;
