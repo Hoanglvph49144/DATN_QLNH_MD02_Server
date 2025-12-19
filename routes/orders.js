@@ -15,6 +15,12 @@ router.get('/historyod', orderController.getPaidOrders);
 
 router.post('/pay', orderController.payOrder);
 
+// GET - Đếm số lượng yêu cầu kiểm tra bàn (phải đặt trước /:id)
+router.get('/check-items-requests/count', orderController.getCheckItemsRequestsCount);
+
+// GET - Lấy danh sách yêu cầu kiểm tra bàn (phải đặt trước /:id)
+router.get('/check-items-requests', orderController.getCheckItemsRequests);
+
 // GET - Lấy danh sách tất cả orders (hỗ trợ ?tableNumber=)
 router.get('/', orderController.getAllOrders);
 
@@ -38,5 +44,11 @@ router.patch('/:orderId/items/:itemId/status', kitchenController.updateItemStatu
 
 // NEW: route để phục vụ yêu cầu hủy món (phục vụ gửi yêu cầu lên bếp kèm lý do)
 router.post('/:orderId/items/:itemId/request-cancel', kitchenController.requestCancelDish);
+
+// POST - Tạo yêu cầu kiểm tra bàn cho một order
+router.post('/:id/request-check-items', orderController.requestCheckItems);
+
+// DELETE - Xóa yêu cầu kiểm tra bàn
+router.delete('/:id/check-items-request', orderController.clearCheckItemsRequest);
 
 module.exports = router;
