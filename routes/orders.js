@@ -2,17 +2,18 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/order.controller');
-
 const kitchenController = require('../controllers/kitchen.controller');
 
+// ========================================
+// SPECIAL ROUTES (phải đặt TRƯỚC các routes có : id)
+// ========================================
+
+// Revenue routes
 router.get('/revenue', orderController.getRevenueFromOrders);
-
-// Thống kê doanh thu theo ngày (theo query ?fromDate&toDate)
 router.get('/byDate', orderController.getRevenueByDate);
-
-// Lịch sử đơn đã thanh toán
 router.get('/historyod', orderController.getPaidOrders);
 
+// Payment route
 router.post('/pay', orderController.payOrder);
 
 // GET - Đếm số lượng yêu cầu kiểm tra bàn (phải đặt trước /:id)
@@ -36,13 +37,17 @@ router.put('/:id', orderController.updateOrder);
 // DELETE - Xóa order theo ID
 router.delete('/:id', orderController.deleteOrder);
 
-// POST - Yêu cầu tạm tính: chuyển order sang trạng thái "hóa đơn tạm tính" và gửi thông báo cho thu ngân
+// ========================================
+// ITEM-SPECIFIC ROUTES (phải có :id trong path)
+// ========================================
+
+// POST - Yêu cầu tạm tính
 router.post('/:id/request-temp-calculation', orderController.requestTempCalculation);
 
-// PATCH cập nhật trạng thái món (đã có)
+// PATCH - Cập nhật trạng thái món
 router.patch('/:orderId/items/:itemId/status', kitchenController.updateItemStatus);
 
-// NEW: route để phục vụ yêu cầu hủy món (phục vụ gửi yêu cầu lên bếp kèm lý do)
+// POST - Yêu cầu hủy món (phục vụ gửi yêu cầu lên bếp kèm lý do)
 router.post('/:orderId/items/:itemId/request-cancel', kitchenController.requestCancelDish);
 
 // POST - Tạo yêu cầu kiểm tra bàn cho một order

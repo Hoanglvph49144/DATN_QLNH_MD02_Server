@@ -6,6 +6,13 @@ const { softDeletePlugin } = require('../utils/softDelete');
 const orderSchema = new db.mongoose.Schema(
   {
     tableNumber: { type: Number, required: true },
+    // Danh sách các bàn chia sẻ order này
+    tableNumbers: {
+      type: [Number],
+      default: function() {
+        return [this.tableNumber]; // Mặc định chỉ có bàn gốc
+      }
+    },
     server: { type: db.mongoose.Schema.Types.ObjectId, ref: 'userModel', required: true },
     cashier: { type: db.mongoose.Schema.Types.ObjectId, ref: 'userModel', required: true },
     items: [
