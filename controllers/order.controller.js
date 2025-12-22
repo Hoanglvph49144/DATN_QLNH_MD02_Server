@@ -88,6 +88,34 @@ function populateOrderQuery(query) {
 }
 
 /**
+ * Helper để loại bỏ các field không hợp lệ khỏi items array
+ * Các field checkItemsStatus, checkItemsNote không thuộc schema của items
+ */
+function cleanItemsArray(order) {
+  if (!order || !order.items || !Array.isArray(order.items)) return order;
+  
+  // Danh sách các field hợp lệ trong items schema
+  const validItemFields = [
+    'menuItem', 'menuItemName', 'imageUrl', 'quantity', 'price', 
+    'status', 'cancelRequestedBy', 'cancelRequestedAt', 'cancelReason', 
+    'note', '_id'
+  ];
+  
+  // Loại bỏ các field không hợp lệ khỏi mỗi item
+  order.items = order.items.map(item => {
+    const cleanedItem = {};
+    validItemFields.forEach(field => {
+      if (item[field] !== undefined) {
+        cleanedItem[field] = item[field];
+      }
+    });
+    return cleanedItem;
+  });
+  
+  return order;
+}
+
+/**
  * Helper to ensure checkItemsRequestedAt and checkItemsRequestedBy are always in response
  * This ensures fields are returned even if they don't exist in old documents
  */
@@ -112,7 +140,8 @@ function ensureCheckItemsFields(order) {
     }
   }
   
-  return order;
+  // Loại bỏ các field không hợp lệ khỏi items
+  return cleanItemsArray(order);
 }
 
 /**
@@ -121,6 +150,21 @@ function ensureCheckItemsFields(order) {
 function ensureCheckItemsFieldsForArray(orders) {
   if (!Array.isArray(orders)) return orders;
   return orders.map(order => ensureCheckItemsFields(order));
+}
+
+/**
+ * Helper to emit socket events (uses req.app.get('io') if available).
+ * Emits both a global broadcast and a room-specific event (room name "table_<tableNumber>").
+ */
+function emitOrderEvent(req, eventName, payload) {
+  const io = req?.app?.get('io');
+  if (!io) return;
+
+  io.emit(eventName, payload);
+
+  if (payload?.tableNumber !== undefined) {
+    io.to(`table_${payload.tableNumber}`).emit(eventName, payload);
+  }
 }
 
 /**
